@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tài Xỉu HHHL</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #3b0000, #000);
+      font-family: Arial, sans-serif;
+      color: #fff;
+      text-align: center;
+    }
+    header {
+      font-size: 2.5em;
+      margin-top: 20px;
+      color: gold;
+      text-shadow: 0 0 10px red;
+    }
+    .logo {
+      margin-top: 10px;
+    }
+    .dice-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 30px 0;
+    }
+    .dice {
+      width: 80px;
+      height: 80px;
+      border-radius: 15px;
+      background: #660000;
+      box-shadow: 0 0 10px #ffaaaa;
+    }
+    .cover {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, #111, #000);
+      top: 0;
+      left: 0;
+      z-index: 10;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      color: gold;
+      transition: opacity 0.5s ease;
+    }
+    .cover.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .balance {
+      font-size: 1.3em;
+      margin-bottom: 10px;
+      color: #ffdd00;
+    }
+    .bet, .withdraw-section, .topup-section {
+      margin: 10px auto;
+      font-size: 1.2em;
+      max-width: 400px;
+    }
+    .bet input, .withdraw-section input, .withdraw-section select, .topup-section input, .topup-section select { /* Thêm .topup-section select */
+      padding: 6px;
+      width: 100%;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+      margin-bottom: 10px;
+    }
+    .buttons {
+      margin: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 1.2em;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 10px red;
+    }
+    .result {
+      font-size: 1.5em;
+      margin-top: 20px;
+      color: yellow;
+    }
+    .history-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 20px auto;
+      max-width: 400px;
+    }
+    .history-item {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 0.8em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tài {
+      background-color: red;
+    }
+    .xỉu {
+      background-color: blue;
+    }
+    audio {
+      display: none;
+    }
+    .qr-code-display {
+      margin-top: 15px;
+      background-color: #220000;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #550000;
+      text-align: center; /* Căn giữa nội dung QR */
+    }
+    .qr-code-display img {
+      width: 180px;
+      height: 180px;
+      border: 5px solid #fff;
+      border-radius: 5px;
+      display: block; /* Để căn giữa ảnh */
+      margin: 10px auto; /* Căn giữa ảnh */
+    }
+    .qr-code-display p {
+      font-size: 0.9em;
+      color: #ccc;
+      margin-top: 10px;
+    }
+    .bank-info {
+        font-size: 1.1em;
+        color: gold;
+        margin-bottom: 5px;
+    }
+    .momo-qr-info { /* Style riêng cho Momo QR info */
+        color: magenta;
+    }
+  </style>
+</head>
+<body>
+  <header>Tài Xỉu HHHL</header>
+  <div class="logo">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Casino_icon.png/240px-Casino_icon.png" alt="Logo" width="100">
+  </div>
+
+  <div class="dice-container">
+    <img class="dice" id="dice1" src="https://upload.wikimedia.org/wikipedia/commons/3/3f/White_square_with_question_mark.png" alt="Dice 1">
+    <img class="dice" id="dice2" src="https://upload.wikimedia.org/wikipedia/commons/3/3f/White_square_with_question_mark.png" alt="Dice 2">
+    <img class="dice" id="dice3" src="https://upload.wikimedia.org/wikipedia/commons/3/3f/White_square_with_question_mark.png" alt="Dice 3">
+    <div class="cover" id="cover">ĐANG NẶN...</div>
+  </div>
+
+  <div class="balance" id="balance">Số dư: 100,000 VND</div>
+
+  <div class="bet">
+    <label for="betAmount">Tiền cược (VND): </label>
+    <input type="number" id="betAmount" min="1000" step="1000" value="1000" />
+  </div>
+
+  <div class="buttons">
+    <button onclick="rollDice('tài')">Chọn Tài</button>
+    <button onclick="rollDice('xỉu')">Chọn Xỉu</button>
+  </div>
+
+  <div class="result" id="resultText"></div>
+
+  <div id="history" class="history-container"></div>
+
+  ---
+
+  <div class="topup-section">
+    <h2 style="color: gold;">Nạp tiền</h2>
+    <label for="topupMethod">Chọn phương thức nạp:</label>
+    <select id="topupMethod" onchange="toggleTopUpFields()">
+      <option value="mbbank">MB Bank (Quét QR động)</option>
+      <option value="momo">Momo (Quét QR tĩnh)</option>
+    </select>
+    <input type="number" id="topupAmount" placeholder="Số tiền nạp (VND)" min="1000" step="1000" />
+    <button onclick="processTopUp()">Tạo mã QR & Nạp tiền</button>
+    <div id="topupResult" style="margin-top: 10px; font-size: 1.2em; color: lime;"></div>
+
+    <div id="qrCodeDisplay" class="qr-code-display" style="display: none;">
+        <div id="mbBankQR" style="display: block;">
+            <p class="bank-info">Ngân hàng: MB Bank</p>
+            <p class="bank-info">STK: <span id="mbAccountNumberDisplay">012345624207</span></p>
+            <p class="bank-info">Tên TK: NGUYEN VAN A (Ví dụ)</p>
+            <img id="qrCodeImage" src="" alt="Mã QR nạp tiền MB Bank">
+            <p>Vui lòng quét mã QR để chuyển tiền. Nội dung chuyển khoản: <strong id="qrContent"></strong></p>
+        </div>
+
+        <div id="momoQR" style="display: none;">
+            <p class="bank-info momo-qr-info">Ví điện tử: Momo</p>
+            <p class="bank-info momo-qr-info">SĐT ví: <span id="momoAccountDisplay">0987654321</span></p> <p class="bank-info momo-qr-info">Tên chủ ví: <span id="momoNameDisplay">NGUYEN VAN B</span></p> <img id="momoQrImage" src="image.png" alt="Mã QR nạp tiền Momo"> <p>Vui lòng quét mã QR để chuyển tiền. Nhập số tiền <strong id="momoAmountContent"></strong> và nội dung chuyển khoản: <strong id="momoQrContent"></strong></p>
+        </div>
+
+        <p style="color: yellow;">Sau khi chuyển khoản thành công, nhấn "Đã chuyển khoản" để hệ thống ghi nhận.</p>
+        <button onclick="confirmManualTopUp()" style="background: darkblue; box-shadow: 0 0 10px blue;">Đã chuyển khoản (Xác nhận thủ công)</button>
+    </div>
+  </div>
+
+  ---
+
+  <div class="withdraw-section">
+    <h2 style="color: gold;">Rút tiền</h2>
+    <select id="bank">
+      <option value="momo">Momo</option>
+      <option value="zalopay">ZaloPay</option>
+      <option value="mbbank">MB Bank</option>
+      <option value="bidv">BIDV</option>
+    </select>
+    <input type="text" id="accountNumber" placeholder="Nhập STK hoặc SĐT ví" />
+    <input type="number" id="withdrawAmount" placeholder="Số tiền rút (VND)" min="1000" step="1000" />
+    <button onclick="withdraw()" style="background: green; box-shadow: 0 0 10px lime;">Xác nhận rút</button>
+    <div id="withdrawResult" style="margin-top: 10px; font-size: 1.2em; color: cyan;"></div>
+  </div>
+
+  <audio id="shakeSound" src="https://actions.google.com/sounds/v1/household/shake_bottle.ogg" preload="auto"></audio>
+  <audio id="music" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop></audio>
+
+  <script>
+    let balance = 100000; // Số dư ban đầu
+    let currentTopUpAmount = 0; // Lưu số tiền đang chờ nạp
+    let currentTransactionId = ''; // Lưu mã giao dịch đang chờ nạp
+
+    function updateBalanceDisplay() {
+      document.getElementById('balance').textContent = `Số dư: ${balance.toLocaleString()} VND`;
+    }
+
+    function getDiceImage(num) {
+      const paths = [
+        "", // 0 không dùng
+        "1/1b/Dice-1-b.svg",
+        "5/5f/Dice-2-b.svg",
+        "b/b1/Dice-3-b.svg",
+        "f/fd/Dice-4-b.svg",
+        "0/08/Dice-5-b.svg",
+        "2/26/Dice-6-b.svg"
+      ];
+      return `https://upload.wikimedia.org/wikipedia/commons/${paths[num]}`;
+    }
+
+    function updateHistory(result, total) {
+      const div = document.createElement("div");
+      div.className = `history-item ${result.toLowerCase()}`;
+      div.textContent = total;
+      const history = document.getElementById("history");
+      history.appendChild(div);
+      if (history.children.length > 20) {
+        history.removeChild(history.firstChild);
+      }
+    }
+
+    function rollDice(choice) {
+      const bet = parseInt(document.getElementById('betAmount').value) || 0;
+      if (bet <= 0) return alert("Vui lòng nhập tiền cược hợp lệ.");
+      if (bet > balance) return alert("Bạn không đủ số dư để đặt cược.");
+
+      const cover = document.getElementById('cover');
+      cover.classList.remove('hidden');
+      document.getElementById('shakeSound').play();
+      document.getElementById('resultText').textContent = '';
+
+      setTimeout(() => {
+        const dice1 = Math.floor(Math.random() * 6) + 1;
+        const dice2 = Math.floor(Math.random() * 6) + 1;
+        const dice3 = Math.floor(Math.random() * 6) + 1;
+        const total = dice1 + dice2 + dice3;
+
+        document.getElementById('dice1').src = getDiceImage(dice1);
+        document.getElementById('dice2').src = getDiceImage(dice2);
+        document.getElementById('dice3').src = getDiceImage(dice3);
+
+        let result = (total >= 11 && total <= 17) ? 'Tài' : 'Xỉu';
+        const win = (result.toLowerCase() === choice.toLowerCase());
+
+        let outcome = '';
+        if (win) {
+          const winAmount = bet * 4; // Ví dụ: thắng x4 tiền cược
+          balance += winAmount;
+          outcome = `Bạn THẮNG +${winAmount.toLocaleString()} VND`;
+        } else {
+          balance -= bet;
+          outcome = `Bạn thua -${bet.toLocaleString()} VND`;
+        }
+
+        updateBalanceDisplay();
+        document.getElementById('resultText').textContent =
+          `Kết quả: ${total} (${result}) - ${outcome}`;
+        updateHistory(result, total);
+        cover.classList.add('hidden');
+      }, 1000);
+    }
+
+    function withdraw() {
+      const amount = parseInt(document.getElementById('withdrawAmount').value);
+      const bank = document.getElementById('bank').value;
+      const accountNumber = document.getElementById('accountNumber').value.trim();
+      const resultEl = document.getElementById('withdrawResult');
+
+      if (!amount || amount <= 0) {
+        resultEl.textContent = "Vui lòng nhập số tiền hợp lệ.";
+        return;
+      }
+
+      if (!accountNumber) {
+        resultEl.textContent = "Vui lòng nhập số tài khoản hoặc SĐT ví.";
+        return;
+      }
+
+      if (amount > balance) {
+        resultEl.textContent = "Số dư không đủ để rút.";
+        return;
+      }
+
+      balance -= amount;
+      updateBalanceDisplay();
+      resultEl.textContent = `Yêu cầu rút ${amount.toLocaleString()} VND đến ${bank.toUpperCase()} (${accountNumber}) đã được ghi nhận.`;
+    }
+
+    // Function to process top-up based on selected method
+    function processTopUp() {
+      const selectedMethod = document.getElementById('topupMethod').value;
+      if (selectedMethod === 'mbbank') {
+        generateMBBankQR();
+      } else if (selectedMethod === 'momo') {
+        displayMomoQR();
+      }
+    }
+
+    // Function to generate QR code for MB Bank top-up
+    function generateMBBankQR() {
+      const amount = parseInt(document.getElementById('topupAmount').value);
+      const resultEl = document.getElementById('topupResult');
+      const qrCodeDisplay = document.getElementById('qrCodeDisplay');
+      const mbBankQR = document.getElementById('mbBankQR');
+      const momoQR = document.getElementById('momoQR');
+      const qrCodeImage = document.getElementById('qrCodeImage');
+      const qrContentText = document.getElementById('qrContent');
+      const mbAccountNumberDisplay = document.getElementById('mbAccountNumberDisplay');
+
+      if (!amount || amount <= 0) {
+        resultEl.textContent = "Vui lòng nhập số tiền nạp hợp lệ.";
+        qrCodeDisplay.style.display = 'none';
+        return;
+      }
+
+      const bankId = "MB";
+      const accountNumber = "012345624207"; // MB Bank STK
+      const accountName = "NGUYEN VAN A"; // Thay tên chủ TK MB Bank thật của bạn vào đây
+
+      const transactionId = `HHHL${Date.now().toString().slice(-6)}`;
+      const qrContent = `NAPTIEN ${transactionId}`;
+
+      currentTopUpAmount = amount;
+      currentTransactionId = transactionId;
+
+      const qrApiUrl = `https://api.vieqr.vn/vietqr/${bankId}/${accountNumber}/${amount}/${encodeURIComponent(qrContent)}/`
+                     + `?bankName=${encodeURIComponent("MB Bank")}&accountName=${encodeURIComponent(accountName)}`;
+
+      qrCodeImage.src = qrApiUrl;
+      qrContentText.textContent = qrContent;
+      mbAccountNumberDisplay.textContent = accountNumber;
+
+      resultEl.textContent = `Vui lòng quét mã QR hoặc chuyển khoản thủ công. Mã giao dịch của bạn là: ${transactionId}`;
+      qrCodeDisplay.style.display = 'block';
+      mbBankQR.style.display = 'block'; // Hiển thị phần MB Bank QR
+      momoQR.style.display = 'none'; // Ẩn phần Momo QR
+    }
+
+    // Function to display static Momo QR
+    function displayMomoQR() {
+      const amount = parseInt(document.getElementById('topupAmount').value);
+      const resultEl = document.getElementById('topupResult');
+      const qrCodeDisplay = document.getElementById('qrCodeDisplay');
+      const mbBankQR = document.getElementById('mbBankQR');
+      const momoQR = document.getElementById('momoQR');
+      const momoQrContent = document.getElementById('momoQrContent');
+      const momoAmountContent = document.getElementById('momoAmountContent');
+
+      if (!amount || amount <= 0) {
+        resultEl.textContent = "Vui lòng nhập số tiền nạp hợp lệ.";
+        qrCodeDisplay.style.display = 'none';
+        return;
+      }
+
+      const transactionId = `HHHL${Date.now().toString().slice(-6)}`;
+      const qrContent = `NAPTIEN ${transactionId}`;
+
+      currentTopUpAmount = amount;
+      currentTransactionId = transactionId;
+
+      momoQrContent.textContent = qrContent;
+      momoAmountContent.textContent = amount.toLocaleString() + " VND";
+      document.getElementById('momoQrImage').src = 'image.png'; // Đảm bảo đường dẫn đúng
+
+      resultEl.textContent = `Vui lòng quét mã QR Momo. Mã giao dịch của bạn là: ${transactionId}`;
+      qrCodeDisplay.style.display = 'block';
+      mbBankQR.style.display = 'none'; // Ẩn phần MB Bank QR
+      momoQR.style.display = 'block'; // Hiển thị phần Momo QR
+    }
+
+    // Function to toggle top-up fields visibility based on selection
+    function toggleTopUpFields() {
+        // Ẩn tất cả các khu vực QR khi thay đổi phương thức để tránh hiển thị thông tin cũ
+        document.getElementById('qrCodeDisplay').style.display = 'none';
+        document.getElementById('topupResult').textContent = ''; // Xóa thông báo cũ
+        document.getElementById('topupAmount').value = ''; // Xóa số tiền đã nhập
+        currentTopUpAmount = 0;
+        currentTransactionId = '';
+    }
+
+    // Function to simulate manual top-up confirmation
+    function confirmManualTopUp() {
+      if (currentTopUpAmount > 0) {
+        balance += currentTopUpAmount;
+        updateBalanceDisplay();
+        document.getElementById('topupResult').textContent =
+          `Bạn đã nạp thành công ${currentTopUpAmount.toLocaleString()} VND. Mã đơn: ${currentTransactionId}`;
+        document.getElementById('qrCodeDisplay').style.display = 'none';
+        document.getElementById('topupAmount').value = '';
+        currentTopUpAmount = 0;
+        currentTransactionId = '';
+        alert("Xác nhận nạp tiền thành công! Số dư đã được cập nhật.");
+      } else {
+        alert("Không có giao dịch nạp tiền nào đang chờ xác nhận. Vui lòng tạo mã QR trước.");
+      }
+    }
+
+  </script>
+</body>
+</html>
